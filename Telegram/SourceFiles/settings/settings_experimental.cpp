@@ -20,6 +20,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "ui/gl/gl_detection.h"
 #include "ui/chat/chat_style_radius.h"
 #include "ui/controls/compose_ai_button_factory.h"
+#include "ui/search_field_controller.h"
 #include "base/options.h"
 #include "boxes/moderate_messages_box.h"
 #include "core/application.h"
@@ -323,8 +324,21 @@ Experimental::Experimental(
 	setupContent();
 }
 
+Experimental::~Experimental() = default;
+
 rpl::producer<QString> Experimental::title() {
 	return tr::lng_settings_experimental();
+}
+
+void Experimental::setInnerFocus() {
+}
+
+void Experimental::showFinished() {
+}
+
+base::weak_qptr<Ui::RpWidget> Experimental::createPinnedToTop(
+		not_null<QWidget*> parent) {
+	return nullptr;
 }
 
 void Experimental::fillTopBarMenu(const Ui::Menu::MenuCallback &addAction) {

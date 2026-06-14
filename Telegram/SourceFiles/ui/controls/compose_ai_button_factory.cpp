@@ -10,6 +10,9 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "base/options.h"
 #include "boxes/compose_ai_box.h"
 #include "config.h"
+#include "data/data_ai_compose_tones.h"
+#include "data/data_premium_limits.h"
+#include "data/data_session.h"
 #include "core/mime_type.h"
 #include "history/view/controls/history_view_compose_ai_button.h"
 #include "lang/lang_keys.h"
@@ -27,6 +30,11 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 
 namespace Ui {
+namespace {
+
+constexpr auto kDefaultMessageSizeLimit = 4096;
+
+} // namespace
 
 const char kOptionHideAiButton[] = "hide-ai-button";
 
@@ -40,7 +48,7 @@ bool HasEnoughLinesForAi(
 		not_null<Main::Session*> session,
 		not_null<Ui::InputField*> field) {
 	if (!AyuSettings::getInstance().showAiEditorButtonInMessageField()
-		|| session->appConfig().aiComposeStyles().empty()) {
+		|| session->data().aiComposeTones().list().empty()) {
 		return false;
 	}
 	const auto &style = field->st().style;
@@ -55,7 +63,7 @@ bool HasEnoughLinesForAi(
 		return false;
 	}
 	const auto &text = field->getLastText();
-	if (text.size() > MaxMessageSize) {
+	if (text.size() > Data::PremiumLimits(session).messageLengthCurrent()) {
 		return false;
 	}
 	for (const auto &ch : text) {
@@ -82,10 +90,11 @@ PreparedList PrepareTextAsFile(const QString &text) {
 constexpr auto kSendAsFilePasteMultiplier = 8;
 
 int SendAsFilePasteThreshold() {
-	return kSendAsFilePasteMultiplier * MaxMessageSize;
+	return kSendAsFilePasteMultiplier * kDefaultMessageSizeLimit;
 }
 
 LargeTextPasteResult CheckLargeTextPaste(
+		not_null<Main::Session*> session,
 		not_null<Ui::InputField*> field,
 		not_null<const QMimeData*> data) {
 	if (data->hasImage()) {

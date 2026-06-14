@@ -231,7 +231,9 @@ void DeleteMessagesBox::prepare() {
 						? QString()
 						: QString(" (%1)").arg(total));
 			});
-			search->searchMessages({ .from = _moderateFrom });
+			auto request = Api::MessagesSearch::Request();
+			request.from = _moderateFrom;
+			search->searchMessages(std::move(request));
 		}
 	} else {
 		details.text = hasSavedMusicMessages()
@@ -377,6 +379,10 @@ bool DeleteMessagesBox::hasSavedMusicMessages() const {
 		}
 	}
 	return false;
+}
+
+crl::time DeleteMessagesBox::layerAnimationDuration() const {
+	return BoxContent::layerAnimationDuration();
 }
 
 PeerData *DeleteMessagesBox::checkFromSinglePeer() const {

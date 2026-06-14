@@ -404,6 +404,9 @@ private:
 	void checkPaginateSearchStickers(int visibleTop, int visibleBottom);
 	void refreshSearchRows();
 	void refreshSearchRows(const std::vector<uint64> *cloudSets);
+	void fillLocalSearchRows(const QString &query);
+	void fillCloudSearchRows(const std::vector<uint64> &cloudSets);
+	void addSearchRow(not_null<Data::StickersSet*> set);
 	void refreshSearchShortcuts(
 		const QString &query,
 		const std::vector<uint64> *cloudSets);

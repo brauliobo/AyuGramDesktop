@@ -328,6 +328,8 @@ PRIVATE
     api/api_premium.h
     api/api_premium_option.cpp
     api/api_premium_option.h
+    api/api_polls.cpp
+    api/api_polls.h
     api/api_reactions_notify_settings.cpp
     api/api_reactions_notify_settings.h
     api/api_read_metrics.cpp
@@ -459,6 +461,8 @@ PRIVATE
     boxes/choose_filter_box.h
     boxes/connection_box.cpp
     boxes/connection_box.h
+    boxes/create_ai_tone_box.cpp
+    boxes/create_ai_tone_box.h
     boxes/create_poll_box.cpp
     boxes/create_poll_box.h
     boxes/delete_messages_box.cpp
@@ -479,8 +483,8 @@ PRIVATE
     boxes/gift_premium_box.h
     boxes/language_box.cpp
     boxes/language_box.h
-    boxes/local_storage_box.cpp
-    boxes/local_storage_box.h
+    settings/sections/settings_local_storage.cpp
+    settings/sections/settings_local_storage.h
     boxes/max_invite_box.cpp
     boxes/max_invite_box.h
     boxes/moderate_messages_box.cpp
@@ -545,8 +549,12 @@ PRIVATE
     boxes/stickers_box.h
     boxes/transfer_gift_box.cpp
     boxes/transfer_gift_box.h
+    boxes/unconfirmed_auth_denied_box.cpp
+    boxes/unconfirmed_auth_denied_box.h
     boxes/compose_ai_box.cpp
     boxes/compose_ai_box.h
+    boxes/preview_ai_tone_box.cpp
+    boxes/preview_ai_tone_box.h
     boxes/translate_box.cpp
     boxes/translate_box.h
     boxes/url_auth_box.cpp
@@ -593,6 +601,8 @@ PRIVATE
     calls/group/calls_group_viewport_opengl.h
     calls/group/calls_group_viewport_raster.cpp
     calls/group/calls_group_viewport_raster.h
+    calls/group/calls_group_viewport_rhi.cpp
+    calls/group/calls_group_viewport_rhi.h
     calls/group/calls_group_viewport_tile.cpp
     calls/group/calls_group_viewport_tile.h
     calls/group/calls_volume_item.cpp
@@ -706,6 +716,8 @@ PRIVATE
     core/deep_links/deep_links_settings.cpp
     core/deep_links/deep_links_settings.h
     core/deep_links/deep_links_types.h
+    core/external_control.cpp
+    core/external_control.h
     core/file_utilities.cpp
     core/file_utilities.h
     core/launcher.cpp
@@ -747,6 +759,8 @@ PRIVATE
     data/components/passkeys.h
     data/components/promo_suggestions.cpp
     data/components/promo_suggestions.h
+    data/components/recent_inline_bots.cpp
+    data/components/recent_inline_bots.h
     data/components/recent_peers.cpp
     data/components/recent_peers.h
     data/components/recent_shared_media_gifts.cpp
@@ -772,6 +786,8 @@ PRIVATE
     data/data_abstract_sparse_ids.h
     data/data_abstract_structure.cpp
     data/data_abstract_structure.h
+    data/data_ai_compose_tones.cpp
+    data/data_ai_compose_tones.h
     data/data_audio_msg_id.cpp
     data/data_audio_msg_id.h
     data/data_auto_download.cpp
@@ -935,6 +951,8 @@ PRIVATE
     dialogs/dialogs_entry.h
     dialogs/dialogs_indexed_list.cpp
     dialogs/dialogs_indexed_list.h
+    dialogs/dialogs_inner_widget_accessibility.cpp
+    dialogs/dialogs_inner_widget_accessibility.h
     dialogs/dialogs_inner_widget.cpp
     dialogs/dialogs_inner_widget.h
     dialogs/dialogs_key.cpp
@@ -955,6 +973,17 @@ PRIVATE
     dialogs/dialogs_search_tags.h
     dialogs/dialogs_search_posts.cpp
     dialogs/dialogs_search_posts.h
+    dialogs/suggestions/suggestion.cpp
+    dialogs/suggestions/suggestion.h
+    dialogs/suggestions/suggestion_birthday_contacts.cpp
+    dialogs/suggestions/suggestion_birthday_setup.cpp
+    dialogs/suggestions/suggestion_custom_promo.cpp
+    dialogs/suggestions/suggestion_gift_auctions.cpp
+    dialogs/suggestions/suggestion_low_credits_subs.cpp
+    dialogs/suggestions/suggestion_premium_grace.cpp
+    dialogs/suggestions/suggestion_premium_offer.cpp
+    dialogs/suggestions/suggestion_unreviewed_auth.cpp
+    dialogs/suggestions/suggestion_userpic_setup.cpp
     dialogs/dialogs_top_bar_suggestion.cpp
     dialogs/dialogs_top_bar_suggestion.h
     dialogs/dialogs_widget.cpp
@@ -1128,6 +1157,8 @@ PRIVATE
     history/view/history_view_draw_to_reply.h
     history/view/history_view_add_poll_option.cpp
     history/view/history_view_add_poll_option.h
+    history/view/history_view_drag.cpp
+    history/view/history_view_drag.h
     history/view/history_view_element_overlay.cpp
     history/view/history_view_element_overlay.h
     history/view/history_view_element.cpp
@@ -1202,6 +1233,8 @@ PRIVATE
     history/view/history_view_webpage_preview.h
     history/history.cpp
     history/history.h
+    history/history_inner_widget_accessibility.cpp
+    history/history_inner_widget_accessibility.h
     history/history_drag_area.cpp
     history/history_drag_area.h
     history/history_item.cpp
@@ -1306,6 +1339,8 @@ PRIVATE
     info/profile/info_profile_badge_tooltip.h
     info/profile/info_profile_badge.cpp
     info/profile/info_profile_badge.h
+    info/profile/info_profile_birthday_effect.cpp
+    info/profile/info_profile_birthday_effect.h
     info/profile/info_profile_cover.cpp
     info/profile/info_profile_cover.h
     info/profile/info_profile_emoji_status_panel.cpp
@@ -1318,6 +1353,8 @@ PRIVATE
     info/profile/info_profile_members_controllers.h
     info/profile/info_profile_phone_menu.cpp
     info/profile/info_profile_phone_menu.h
+    info/profile/info_profile_section_stack.cpp
+    info/profile/info_profile_section_stack.h
     info/profile/info_profile_status_label.cpp
     info/profile/info_profile_status_label.h
     info/profile/info_profile_top_bar.cpp
@@ -1423,10 +1460,14 @@ PRIVATE
     intro/intro_step.h
     intro/intro_widget.cpp
     intro/intro_widget.h
+    iv/iv_cached_media.cpp
+    iv/iv_cached_media.h
     iv/iv_delegate_impl.cpp
     iv/iv_delegate_impl.h
     iv/iv_instance.cpp
     iv/iv_instance.h
+    iv/iv_rich_page.cpp
+    iv/iv_rich_page.h
     lang/lang_cloud_manager.cpp
     lang/lang_cloud_manager.h
     lang/lang_instance.cpp
@@ -1552,6 +1593,8 @@ PRIVATE
     media/view/media_view_overlay_opengl.h
     media/view/media_view_overlay_raster.cpp
     media/view/media_view_overlay_raster.h
+    media/view/media_view_overlay_rhi.cpp
+    media/view/media_view_overlay_rhi.h
     media/view/media_view_overlay_renderer.h
     media/view/media_view_overlay_widget.cpp
     media/view/media_view_overlay_widget.h
@@ -1561,6 +1604,8 @@ PRIVATE
     media/view/media_view_pip_opengl.h
     media/view/media_view_pip_raster.cpp
     media/view/media_view_pip_raster.h
+    media/view/media_view_pip_rhi.cpp
+    media/view/media_view_pip_rhi.h
     media/view/media_view_pip_renderer.h
     media/view/media_view_playback_controls.cpp
     media/view/media_view_playback_controls.h
@@ -1622,6 +1667,10 @@ PRIVATE
     overview/overview_layout_delegate.h
     poll/poll_media_upload.cpp
     poll/poll_media_upload.h
+    poll/poll_link_box.cpp
+    poll/poll_link_box.h
+    poll/poll_link_thumbnail.cpp
+    poll/poll_link_thumbnail.h
     passport/passport_encryption.cpp
     passport/passport_encryption.h
     passport/passport_form_controller.cpp
@@ -1932,6 +1981,8 @@ PRIVATE
     ui/chat/sponsored_message_bar.h
     ui/controls/compose_ai_button_factory.cpp
     ui/controls/compose_ai_button_factory.h
+    ui/controls/custom_emoji_toast_icon.cpp
+    ui/controls/custom_emoji_toast_icon.h
     ui/controls/emoji_button_factory.cpp
     ui/controls/emoji_button_factory.h
     ui/controls/location_picker.cpp
@@ -1944,6 +1995,8 @@ PRIVATE
     ui/controls/userpic_button.h
     ui/effects/credits_graphics.cpp
     ui/effects/credits_graphics.h
+    ui/effects/animated_string.cpp
+    ui/effects/animated_string.h
     ui/effects/emoji_fly_animation.cpp
     ui/effects/emoji_fly_animation.h
     ui/effects/message_sending_animation_common.h
@@ -1953,6 +2006,16 @@ PRIVATE
     ui/effects/reaction_fly_animation.h
     ui/effects/send_action_animations.cpp
     ui/effects/send_action_animations.h
+    ui/effects/thanos_effect.cpp
+    ui/effects/thanos_effect.h
+    ui/effects/thanos_effect_controller.cpp
+    ui/effects/thanos_effect_controller.h
+    ui/effects/thanos_effect_renderer.cpp
+    ui/effects/thanos_effect_renderer.h
+    ui/effects/thanos_effect_session.cpp
+    ui/effects/thanos_effect_session.h
+    ui/controls/warning_tooltip.cpp
+    ui/controls/warning_tooltip.h
     ui/image/image.cpp
     ui/image/image.h
     ui/image/image_location.cpp
@@ -2105,7 +2168,7 @@ PRIVATE
     qrc/emoji_preview.qrc
     qrc/telegram/animations.qrc
     qrc/telegram/export.qrc
-    qrc/telegram/iv.qrc
+    qrc/telegram/bot_webview_shell.qrc
     qrc/telegram/picker.qrc
     qrc/telegram/telegram.qrc
     qrc/telegram/sounds.qrc
@@ -2237,6 +2300,7 @@ elseif (APPLE)
     endif()
 else()
     include(${cmake_helpers_loc}/external/glib/generate_dbus.cmake)
+    generate_dbus(Telegram org.freedesktop.portal. FlatpakPortal /usr/share/dbus-1/interfaces/org.freedesktop.portal.Flatpak.xml)
     generate_dbus(Telegram org.freedesktop.portal. XdpBackground ${third_party_loc}/xdg-desktop-portal/data/org.freedesktop.portal.Background.xml)
     generate_dbus(Telegram org.freedesktop. XdgNotifications ${src_loc}/platform/linux/org.freedesktop.Notifications.xml)
 

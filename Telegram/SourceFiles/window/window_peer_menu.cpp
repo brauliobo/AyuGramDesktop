@@ -4133,7 +4133,10 @@ void AddSenderUserpicModerateAction(
 			.handler = [=] {
 				controller->show(Box(
 					CreateModerateMessagesBox,
-					HistoryItemsList{ not_null<HistoryItem*>(moderateItem) },
+					ModerateMessagesBoxEntry{
+						.items = HistoryItemsList{
+							not_null<HistoryItem*>(moderateItem) },
+					},
 					nullptr,
 					ModerateMessagesBoxOptions{
 						.reportSpam = true,

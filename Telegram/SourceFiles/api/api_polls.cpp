@@ -285,7 +285,8 @@ void Polls::close(not_null<HistoryItem*> item) {
 		MTPVector<MTPMessageEntity>(),
 		MTP_int(0), // schedule_date
 		MTP_int(0), // schedule_repeat_period
-		MTPint() // quick_reply_shortcut_id
+		MTPint(), // quick_reply_shortcut_id
+		MTPInputRichMessage()
 	)).done([=](const MTPUpdates &result) {
 		_pollCloseRequestIds.erase(itemId);
 		_session->updates().applyUpdates(result);
@@ -314,6 +315,15 @@ void Polls::reloadResults(not_null<HistoryItem*> item) {
 		_pollReloadRequestIds.erase(itemId);
 	}).send();
 	_pollReloadRequestIds.emplace(itemId, requestId);
+}
+
+void Polls::requestStats(
+		FullMsgId itemId,
+		Fn<void(Data::StatisticalGraph)> done,
+		Fn<void(QString)> fail) {
+	if (fail) {
+		fail(QString());
+	}
 }
 
 } // namespace Api

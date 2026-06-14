@@ -11,6 +11,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 enum class PaidPostType : uchar;
 
+class ChannelData;
+
 namespace Main {
 class Session;
 } // namespace Main
@@ -27,7 +29,8 @@ class DeleteMessagesBox final : public Ui::BoxContent {
 public:
 	DeleteMessagesBox(
 		QWidget*,
-		not_null<HistoryItem*> item);
+		not_null<HistoryItem*> item,
+		bool suggestModerateActions = false);
 	DeleteMessagesBox(
 		QWidget*,
 		not_null<Main::Session*> session,
@@ -70,14 +73,21 @@ private:
 	const QDate _wipeHistoryFirstToDelete;
 	const QDate _wipeHistoryLastToDelete;
 	const MessageIdsList _ids;
+	PeerData *_moderateFrom = nullptr;
+	ChannelData *_moderateInChannel = nullptr;
 
 	bool _revokeForBot = false;
 	bool _revokeJustClearForChannel = false;
+	bool _moderateBan = false;
+	bool _moderateDeleteAll = false;
 
 	object_ptr<Ui::FlatLabel> _text = { nullptr };
 	object_ptr<Ui::Checkbox> _revoke = { nullptr };
 	object_ptr<Ui::SlideWrap<Ui::Checkbox>> _revokeRemember = { nullptr };
 	object_ptr<Ui::LinkButton> _autoDeleteSettings = { nullptr };
+	object_ptr<Ui::Checkbox> _banUser = { nullptr };
+	object_ptr<Ui::Checkbox> _reportSpam = { nullptr };
+	object_ptr<Ui::Checkbox> _deleteAll = { nullptr };
 
 	int _fullHeight = 0;
 	bool _confirmedDeletePaidSuggestedPosts = false;

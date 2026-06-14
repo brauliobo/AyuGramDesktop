@@ -3179,7 +3179,7 @@ object_ptr<Ui::RpWidget> SetupChannelMembersAndManage(
 	auto membersCallback = [=] {
 		controller->showSection(std::make_shared<Info::Memento>(
 			channel,
-			Section::Type::Members));
+			Info::Section::Type::Members));
 	};
 
 	const auto membersWrap = result->entity()->add(
@@ -3346,6 +3346,46 @@ object_ptr<Ui::RpWidget> SetupChannelMembersAndManage(
 	result->entity()->add(CreateSkipWidget(result));
 
 	return result;
+}
+
+void AddDetails(
+	not_null<Ui::VerticalLayout*> container,
+	not_null<Controller*> controller,
+	not_null<PeerData*> peer,
+	Data::ForumTopic *topic,
+	Data::SavedSublist *sublist,
+	Origin origin,
+	Ui::MultiSlideTracker &mainTracker,
+	rpl::variable<bool> &dividerOverridden);
+
+void AddDetails(
+		not_null<Ui::VerticalLayout*> container,
+		not_null<Controller*> controller,
+		not_null<PeerData*> peer,
+		Data::ForumTopic *topic,
+		Data::SavedSublist *sublist,
+		Origin origin) {
+	auto tracker = Ui::MultiSlideTracker();
+	auto dividerOverridden = rpl::variable<bool>(false);
+	AddDetails(
+		container,
+		controller,
+		peer,
+		topic,
+		sublist,
+		origin,
+		tracker,
+		dividerOverridden);
+}
+
+void BuildProfileDetailsSections(
+		SectionStack &stack,
+		not_null<Controller*> controller,
+		not_null<PeerData*> peer,
+		Data::ForumTopic *topic,
+		Data::SavedSublist *sublist,
+		Origin origin) {
+	AddDetails(stack.layout(), controller, peer, topic, sublist, origin);
 }
 
 void AddDetails(

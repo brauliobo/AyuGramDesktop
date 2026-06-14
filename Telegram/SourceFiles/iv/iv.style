@@ -476,7 +476,7 @@ defaultMarkdownTable: MarkdownTable {
 	cellPadding: margins(8px, 10px, 8px, 10px);
 	border: 1px;
 	borderFg: inputBorderFg;
-	radius: defaultTable.radius;
+	radius: 6px;
 	headerBg: windowBgOver;
 	headerBgOpacity: 1.0;
 	headerStyle: defaultMarkdownTableHeaderStyle;

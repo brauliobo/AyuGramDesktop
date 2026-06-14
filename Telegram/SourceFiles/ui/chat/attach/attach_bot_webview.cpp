@@ -13,6 +13,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "ui/effects/radial_animation.h"
 #include "ui/effects/ripple_animation.h"
 #include "ui/layers/box_content.h"
+#include "ui/layers/standalone_layer_stack.h"
 #include "ui/style/style_core_palette.h"
 #include "ui/text/text_utilities.h"
 #include "ui/widgets/separate_panel.h"

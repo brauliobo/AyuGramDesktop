@@ -282,7 +282,9 @@ void FileLoader::loadLocal(const Storage::Cache::Key &key) {
 	};
 	_session->data().cache().get(key, [=, callback = std::move(done)](
 			QByteArray &&value) mutable {
-		if (readImage && !value.startsWith("partial:")) {
+		if (value.isEmpty()) {
+			callback(std::move(value), {}, {});
+		} else if (readImage && !value.startsWith("partial:")) {
 			crl::async([
 				value = std::move(value),
 				done = std::move(callback)
@@ -309,6 +311,9 @@ bool FileLoader::tryLoadLocal() {
 		return false;
 	} else if (_localStatus == LocalStatus::Loading) {
 		return true;
+	} else if (_fromCloud == LoadFromCloudOrLocal) {
+		_localStatus = LocalStatus::NotFound;
+		return false;
 	}
 
 	if (_toCache == LoadToCacheAsWell) {

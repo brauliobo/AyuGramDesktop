@@ -1636,6 +1636,8 @@ SessionController::SessionController(
 		closeFolder();
 	}, lifetime());
 
+	session->data().chatsFilters().load();
+
 	const auto processFiltersMenu = [this] {
 		if (SessionNavigation::session().data().chatsFilters().has()) {
 			const auto isHorizontal

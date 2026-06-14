@@ -956,7 +956,9 @@ bool ChatFilters::loaded() const {
 }
 
 bool ChatFilters::has() const {
-	return _list.size() > 1;
+	return AyuSettings::getInstance().hideAllChatsFolder()
+		? !_list.empty()
+		: (_list.size() > 1);
 }
 
 rpl::producer<> ChatFilters::changed() const {

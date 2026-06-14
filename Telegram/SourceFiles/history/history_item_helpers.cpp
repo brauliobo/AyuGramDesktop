@@ -1336,11 +1336,6 @@ void CheckPollVoteNotificationSchedule(
 	return true;
 }
 
-[[nodiscard]] TextWithEntities EnsureNonEmpty(
-		const TextWithEntities &text) {
-	return !text.text.isEmpty() ? text : TextWithEntities{ u":-("_q };
-}
-
 [[nodiscard]] TextWithEntities UnsupportedMessageText() {
 	const auto siteLink = u"https://t.me/AyuGramReleases"_q;
 	auto result = TextWithEntities{
@@ -1350,6 +1345,11 @@ void CheckPollVoteNotificationSchedule(
 	result.entities.push_front(
 		EntityInText(EntityType::Italic, 0, result.text.size()));
 	return result;
+}
+
+[[nodiscard]] TextWithEntities EnsureNonEmpty(
+		const TextWithEntities &text) {
+	return !text.text.isEmpty() ? text : UnsupportedMessageText();
 }
 
 HistoryMessageMarkupData UnsupportedMessageMarkup() {

@@ -41,6 +41,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "boxes/abstract_box.h"
 #include "passport/passport_form_controller.h"
 #include "iv/iv_data.h"
+#include "iv/iv_rich_page.h"
 #include "lang/lang_keys.h" // tr::lng_deleted(tr::now) in user name
 #include "data/business/data_business_chatbots.h"
 #include "data/business/data_business_info.h"
@@ -76,6 +77,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/data_media_rotation.h"
 #include "data/data_histories.h"
 #include "data/data_peer_values.h"
+#include "data/data_ai_compose_tones.h"
 #include "data/data_premium_limits.h"
 #include "data/data_forum.h"
 #include "data/data_forum_topic.h"
@@ -249,6 +251,7 @@ Session::Session(not_null<Main::Session*> session)
 , _pollsClosingTimer([=] { checkPollsClosings(); })
 , _watchForOfflineTimer([=] { checkLocalUsersWentOffline(); })
 , _groups(this)
+, _aiComposeTones(std::make_unique<AiComposeTones>(session))
 , _chatsFilters(std::make_unique<ChatFilters>(this))
 , _cloudThemes(std::make_unique<CloudThemes>(session))
 , _sendActionManager(std::make_unique<SendActionManager>())
@@ -447,7 +450,6 @@ void Session::clear() {
 	base::take(_nonChannelMessages);
 	_messageByRandomId.clear();
 	_sentMessagesData.clear();
-	cSetRecentInlineBots(RecentInlineBots());
 	cSetRecentStickers(RecentStickerPack());
 	HistoryView::Element::ClearGlobal();
 	_contactsNoChatsList.clear();
@@ -3952,6 +3954,7 @@ not_null<WebPageData*> Session::processWebpage(
 		nullptr,
 		nullptr,
 		nullptr,
+		DocumentId(),
 		0,
 		QString(),
 		false,
@@ -3965,7 +3968,9 @@ not_null<WebPageData*> Session::processWebpage(
 not_null<WebPageData*> Session::webpage(
 		WebPageId id,
 		const QString &siteName,
-		const TextWithEntities &content) {
+		const TextWithEntities &content,
+		PhotoData *photo,
+		DocumentData *document) {
 	return webpage(
 		id,
 		WebPageType::Article,
@@ -3974,8 +3979,8 @@ not_null<WebPageData*> Session::webpage(
 		siteName,
 		QString(),
 		content,
-		nullptr,
-		nullptr,
+		photo,
+		document,
 		WebPageCollage(),
 		nullptr,
 		nullptr,
@@ -4023,6 +4028,7 @@ not_null<WebPageData*> Session::webpage(
 		std::move(stickerSet),
 		std::move(uniqueGift),
 		nullptr,
+		DocumentId(),
 		duration,
 		author,
 		hasLargeMedia,
@@ -4074,6 +4080,8 @@ void Session::webpageApplyFields(
 				}, [](const MTPDwebPageAttributeStarGiftCollection &) {
 					return (DocumentData*)nullptr;
 				}, [](const MTPDwebPageAttributeStarGiftAuction &) {
+					return (DocumentData*)nullptr;
+				}, [](const MTPDwebPageAttributeAiComposeTone &) {
 					return (DocumentData*)nullptr;
 				});
 				if (result) {
@@ -4218,7 +4226,9 @@ void Session::webpageApplyFields(
 	}
 	const auto type = story ? WebPageType::Story : ParseWebPageType(data);
 	auto iv = (data.vcached_page() && !IgnoreIv(type))
-		? std::make_unique<Iv::Data>(data, *data.vcached_page())
+		? std::make_unique<Iv::Data>(
+			data,
+			Iv::ParseRichPage(&session(), *data.vcached_page()))
 		: nullptr;
 	const auto resolvedPhoto = story
 		? story->photo()
@@ -4251,6 +4261,7 @@ void Session::webpageApplyFields(
 		lookupStickerSet(),
 		lookupUniqueGift(),
 		lookupAuction(),
+		DocumentId(),
 		data.vduration().value_or_empty(),
 		qs(data.vauthor().value_or_empty()),
 		data.is_has_large_media(),
@@ -4274,6 +4285,7 @@ void Session::webpageApplyFields(
 		std::unique_ptr<WebPageStickerSet> stickerSet,
 		std::shared_ptr<UniqueGift> uniqueGift,
 		std::unique_ptr<WebPageAuction> auction,
+		DocumentId composeToneEmojiId,
 		int duration,
 		const QString &author,
 		bool hasLargeMedia,
@@ -4295,6 +4307,7 @@ void Session::webpageApplyFields(
 		std::move(stickerSet),
 		std::move(uniqueGift),
 		std::move(auction),
+		composeToneEmojiId,
 		duration,
 		author,
 		hasLargeMedia,
@@ -5373,7 +5386,9 @@ void Session::insertCheckedServiceNotification(
 	const auto localFlags = MessageFlag::ClientSideUnread
 		| MessageFlag::Local;
 	auto sending = TextWithEntities(), left = message;
-	while (TextUtilities::CutPart(sending, left, MaxMessageSize)) {
+	const auto messageLengthLimit = Data::PremiumLimits(
+		&session()).messageLengthCurrent();
+	while (TextUtilities::CutPart(sending, left, messageLengthLimit)) {
 		const auto id = nextLocalMessageId();
 		addNewMessage(
 			id,
@@ -5388,6 +5403,7 @@ void Session::insertCheckedServiceNotification(
 				MTPMessageFwdHeader(),
 				MTPlong(), // via_bot_id
 				MTPlong(), // via_business_bot_id
+				MTPPeer(), // guestchat_via_from
 				MTPMessageReplyHeader(),
 				MTP_int(date),
 				MTP_string(sending.text),
@@ -5410,7 +5426,8 @@ void Session::insertCheckedServiceNotification(
 				MTPlong(), // paid_message_stars
 				MTPSuggestedPost(),
 				MTPint(), // schedule_repeat_period
-				MTPstring()), // summary_from_language
+				MTPstring(), // summary_from_language
+				MTPRichMessage()),
 			localFlags,
 			NewMessageType::Unread);
 	}
@@ -5756,6 +5773,56 @@ HistoryItem *Session::messageWithPeer(PeerId id) const {
 	}
 	_messagesWithPeer.erase(i);
 	return nullptr;
+}
+
+void Session::notifyReactionsRemoved(ReactionsRemoved update) {
+	_reactionsRemoved.fire(std::move(update));
+}
+
+rpl::producer<ReactionsRemoved> Session::reactionsRemoved() const {
+	return _reactionsRemoved.events();
+}
+
+rpl::producer<> Session::sessionDataAboutToBeCleared() const {
+	return _sessionDataAboutToBeCleared.events();
+}
+
+void Session::notifyItemsAboutToBeDestroyed(
+		const std::vector<not_null<HistoryItem*>> &items) {
+	_itemsAboutToBeDestroyed.fire_copy(items);
+}
+
+rpl::producer<std::vector<not_null<HistoryItem*>>>
+Session::itemsAboutToBeDestroyed() const {
+	return _itemsAboutToBeDestroyed.events();
+}
+
+void Session::notifyViewAboutToBeRemoved(
+		not_null<const ViewElement*> view,
+		ViewRemovalReason reason) {
+	_viewAboutToBeRemoved.fire({ view, reason });
+}
+
+rpl::producer<ViewRemoval> Session::viewAboutToBeRemoved() const {
+	return _viewAboutToBeRemoved.events();
+}
+
+void Session::joinChatWebViewDecision(JoinChatWebViewDecision &&decision) {
+	_joinChatWebViewDecision.fire(std::move(decision));
+}
+
+rpl::producer<Session::JoinChatWebViewDecision>
+Session::joinChatWebViewDecision() const {
+	return _joinChatWebViewDecision.events();
+}
+
+void Session::removeReactionsFromParticipant(
+		not_null<PeerData*> peer,
+		MsgId msgId,
+		not_null<PeerData*> participant,
+		const ReactionId &reaction,
+		MsgId removeTillId) {
+	notifyReactionsRemoved({ peer, msgId, participant });
 }
 
 } // namespace Data

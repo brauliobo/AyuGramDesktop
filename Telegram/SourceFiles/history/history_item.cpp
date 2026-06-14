@@ -21,6 +21,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "history/history_unread_things.h"
 #include "history/history.h"
 #include "iv/iv_data.h"
+#include "iv/iv_rich_page.h"
 #include "mtproto/mtproto_config.h"
 #include "ui/text/format_values.h"
 #include "ui/text/text_isolated_emoji.h"
@@ -497,14 +498,23 @@ HistoryItem::HistoryItem(
 					[](const auto &) {});
 			}
 		}
+		auto richPage = data.vrich_message()
+			? Iv::ParseRichPage(&history->session(), *data.vrich_message())
+			: nullptr;
 		auto textWithEntities = TextWithEntities{
 			qs(data.vmessage()),
 			Api::EntitiesFromMTP(
 				&history->session(),
 				data.ventities().value_or_empty())
 		};
+		if (richPage && textWithEntities.empty()) {
+			textWithEntities = Iv::FlattenRichPageSummary(richPage);
+		}
 		if (!skipSetText) {
 			setText(_media ? textWithEntities : EnsureNonEmpty(textWithEntities));
+		}
+		if (richPage) {
+			setRichPage(std::move(richPage));
 		}
 		if (const auto groupedId = data.vgrouped_id()) {
 			setGroupId(
@@ -1884,14 +1894,18 @@ ReplyMarkupFlags HistoryItem::replyKeyboardFlags() const {
 void HistoryItem::addLogEntryOriginal(
 		WebPageId localId,
 		const QString &label,
-		const TextWithEntities &content) {
+		const TextWithEntities &content,
+		PhotoData *photo,
+		DocumentData *document) {
 	Expects(isAdminLogEntry());
 
 	AddComponents(HistoryMessageLogEntryOriginal::Bit());
 	Get<HistoryMessageLogEntryOriginal>()->page = _history->owner().webpage(
 		localId,
 		label,
-		content);
+		content,
+		photo,
+		document);
 }
 
 void HistoryItem::setFactcheck(MessageFactcheck info) {
@@ -2089,10 +2103,10 @@ void HistoryItem::refreshMainView() {
 	}
 }
 
-void HistoryItem::removeMainView() {
+void HistoryItem::removeMainView(Data::ViewRemovalReason reason) {
 	if (const auto view = mainView()) {
 		_history->owner().notifyHistoryChangeDelayed(_history);
-		view->removeFromBlock();
+		view->removeFromBlock(reason);
 	}
 }
 
@@ -2174,13 +2188,22 @@ void HistoryItem::applyEdition(HistoryMessageEdition &&edition) {
 	const auto &checkedMedia = updatingSavedLocalEdit
 		? Get<HistoryMessageSavedMediaData>()->media
 		: _media;
+	if (edition.richPage) {
+		setRichPage(edition.richPage);
+	} else {
+		clearRichPage();
+	}
+	auto editionText = edition.textWithEntities;
+	if (edition.richPage && editionText.empty()) {
+		editionText = Iv::FlattenRichPageSummary(edition.richPage);
+	}
 	auto updatedText = (mediaCheck == MediaCheckResult::Unsupported)
 		? UnsupportedMessageText()
 		: checkedMedia
-		? edition.textWithEntities
-		: EnsureNonEmpty(edition.textWithEntities);
+		? editionText
+		: EnsureNonEmpty(editionText);
 	auto serviceText = (!checkedMedia
-		&& edition.textWithEntities.empty()
+		&& editionText.empty()
 		&& edition.mtpMedia)
 		? prepareServiceTextForMessage(
 			*edition.mtpMedia,
@@ -2442,7 +2465,8 @@ void HistoryItem::applySentMessage(
 
 void HistoryItem::updateSentContent(
 		const TextWithEntities &textWithEntities,
-		const MTPMessageMedia *media) {
+		const MTPMessageMedia *media,
+		const MTPRichMessage *richMessage) {
 	if (isEditingMedia()) {
 		return;
 	}
@@ -2458,7 +2482,19 @@ void HistoryItem::updateSentContent(
 		if (_flags & MessageFlag::Legacy) {
 			_flags &= ~MessageFlag::Legacy;
 		}
-		setText(textWithEntities);
+		auto richPageData = richMessage
+			? Iv::ParseRichPage(&history()->session(), *richMessage)
+			: nullptr;
+		auto text = textWithEntities;
+		if (richPageData && text.empty()) {
+			text = Iv::FlattenRichPageSummary(richPageData);
+		}
+		setText(std::move(text));
+		if (richPageData) {
+			setRichPage(std::move(richPageData));
+		} else {
+			clearRichPage();
+		}
 	}
 	if (mediaCheck == MediaCheckResult::Unsupported) {
 		_media = nullptr;
@@ -8144,4 +8180,90 @@ void HistoryItem::overrideMedia(std::unique_ptr<Data::Media> media) {
 
 void HistoryItem::removeTranslationBit() {
 	RemoveComponents(HistoryMessageTranslation::Bit());
+}
+
+std::shared_ptr<const Iv::RichPage> HistoryItem::richPage() const {
+	if (const auto source = Get<HistoryMessageRichPageSource>()) {
+		return source->page;
+	}
+	return nullptr;
+}
+
+std::shared_ptr<const Iv::RichPage> HistoryItem::fullRichPage() const {
+	if (const auto source = Get<HistoryMessageRichPageSource>()) {
+		return source->fullPage;
+	}
+	return nullptr;
+}
+
+uint64 HistoryItem::fullRichPageVersion() const {
+	if (const auto source = Get<HistoryMessageRichPageSource>()) {
+		return source->fullPageVersion;
+	}
+	return 0;
+}
+
+void HistoryItem::setRichPage(std::shared_ptr<const Iv::RichPage> page) {
+	AddComponents(HistoryMessageRichPageSource::Bit());
+	Get<HistoryMessageRichPageSource>()->page = std::move(page);
+}
+
+void HistoryItem::setFullRichPage(std::shared_ptr<const Iv::RichPage> page) {
+	AddComponents(HistoryMessageRichPageSource::Bit());
+	auto source = Get<HistoryMessageRichPageSource>();
+	source->fullPage = std::move(page);
+	++source->fullPageVersion;
+}
+
+void HistoryItem::clearFullRichPage() {
+	if (const auto source = Get<HistoryMessageRichPageSource>()) {
+		source->fullPage = nullptr;
+		++source->fullPageVersion;
+	}
+}
+
+void HistoryItem::clearRichPage() {
+	if (const auto source = Get<HistoryMessageRichPageSource>()) {
+		source->page = nullptr;
+	}
+}
+
+void HistoryItem::setMediaForInstantView(
+		QString url,
+		DocumentData *document,
+		PhotoData *photo) {
+	auto media = Get<HistoryMessageMediaForInstantView>();
+	media->url = std::move(url);
+	if (document) {
+		media->documents.emplace(not_null<DocumentData*>(document));
+		media->items.emplace_back(document);
+	} else if (photo) {
+		media->photos.emplace(not_null<PhotoData*>(photo));
+		media->items.emplace_back(photo);
+	}
+}
+
+void HistoryItem::addDocumentForInstantView(
+		not_null<DocumentData*> document,
+		TextWithEntities caption) {
+	auto media = Get<HistoryMessageMediaForInstantView>();
+	media->documents.emplace(document);
+	media->items.emplace_back(document.get());
+	media->captions.push_back(std::move(caption));
+}
+
+void HistoryItem::addPhotoForInstantView(
+		not_null<PhotoData*> photo,
+		TextWithEntities caption) {
+	auto media = Get<HistoryMessageMediaForInstantView>();
+	media->photos.emplace(photo);
+	media->items.emplace_back(photo.get());
+	media->captions.push_back(std::move(caption));
+}
+
+void HistoryItem::resolveAdminLogReplyTo(not_null<HistoryItem*> replyTo) {
+}
+
+bool HistoryItem::isGuestChatBotMessage() const {
+	return false;
 }

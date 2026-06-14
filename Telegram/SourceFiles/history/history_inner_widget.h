@@ -170,6 +170,9 @@ public:
 		not_null<DocumentData*> document,
 		FullMsgId context,
 		bool showInMediaView = false);
+	bool elementScrollToLocalY(
+		not_null<const Element*> view,
+		int localTop);
 	void elementCancelUpload(const FullMsgId &context);
 	void elementShowTooltip(
 		const TextWithEntities &text,

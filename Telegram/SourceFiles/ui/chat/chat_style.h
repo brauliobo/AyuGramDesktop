@@ -14,6 +14,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "ui/style/style_core_palette.h"
 #include "layout/layout_selection.h"
 #include "styles/style_basic.h"
+#include "styles/style_iv.h"
 
 enum class ImageRoundRadius;
 
@@ -25,6 +26,10 @@ struct ScrollArea;
 namespace Ui::Text {
 class CustomEmoji;
 } // namespace Ui::Text
+
+namespace HistoryView {
+struct MessageSelection;
+} // namespace HistoryView
 
 namespace Ui {
 
@@ -62,6 +67,7 @@ struct MessageStyle {
 	style::TextPalette semiboldPalette;
 	style::TextPalette fwdTextPalette;
 	style::TextPalette replyTextPalette;
+	style::Markdown richPageStyle;
 
 	style::icon channelBadgeIcon = { Qt::Uninitialized };
 
@@ -72,6 +78,7 @@ struct MessageStyle {
 	style::icon historyPinIcon = { Qt::Uninitialized };
 	style::icon historySentIcon = { Qt::Uninitialized };
 	style::icon historyReceivedIcon = { Qt::Uninitialized };
+	style::icon historySilentIcon = { Qt::Uninitialized };
 	style::icon historyPsaIcon = { Qt::Uninitialized };
 	style::icon historyCommentsOpen = { Qt::Uninitialized };
 	style::icon historyComments = { Qt::Uninitialized };
@@ -197,6 +204,9 @@ struct ChatPaintContext {
 	QRect area;
 	QRect clip;
 	TextSelection selection;
+	bool fullMessageSelected = false;
+	const HistoryView::MessageSelection *messageSelection = nullptr;
+	bool skipSelectionCheck = false;
 	ChatPaintHighlight highlight;
 	QPainterPath *highlightPathCache = nullptr;
 	mutable QRect highlightInterpolateTo;
@@ -304,6 +314,9 @@ struct ColorIndexValues {
 [[nodiscard]] ColorIndexValues SimpleColorIndexValues(
 	QColor color,
 	int patternIndex);
+
+[[nodiscard]] std::vector<Text::SpecialColor> SyntaxHighlightColors(
+	not_null<const style::palette*> palette);
 
 class ChatStyle final : public style::palette {
 public:
@@ -429,6 +442,9 @@ public:
 	[[nodiscard]] const style::icon &historySendingInvertedIcon() const {
 		return _historySendingInvertedIcon;
 	}
+	[[nodiscard]] const style::icon &historySilentInvertedIcon() const {
+		return _historySilentInvertedIcon;
+	}
 	[[nodiscard]] const style::icon &historySentInvertedIcon() const {
 		return _historySentInvertedIcon;
 	}
@@ -533,6 +549,49 @@ private:
 		style::TextPalette &my,
 		const style::TextPalette &original) const;
 	void make(
+		style::QuoteStyle &my,
+		const style::QuoteStyle &original) const;
+	void make(
+		style::TextStyle &my,
+		const style::TextStyle &original) const;
+	void make(
+		style::FlatLabel &my,
+		const style::FlatLabel &original) const;
+	void make(style::Check &my, const style::Check &original) const;
+	void make(
+		style::MarkdownList &my,
+		const style::MarkdownList &original) const;
+	void make(
+		style::MarkdownQuotePaintColors &my,
+		const style::MarkdownQuotePaintColors &original) const;
+	void make(
+		style::MarkdownRule &my,
+		const style::MarkdownRule &original) const;
+	void make(
+		style::MarkdownDisplayMath &my,
+		const style::MarkdownDisplayMath &original) const;
+	void make(
+		style::MarkdownTable &my,
+		const style::MarkdownTable &original) const;
+	void make(
+		style::MarkdownDetails &my,
+		const style::MarkdownDetails &original) const;
+	void make(
+		style::MarkdownPhoto &my,
+		const style::MarkdownPhoto &original) const;
+	void make(
+		style::MarkdownAudio &my,
+		const style::MarkdownAudio &original) const;
+	void make(
+		style::MarkdownGroupedMedia &my,
+		const style::MarkdownGroupedMedia &original) const;
+	void make(
+		style::MarkdownFailure &my,
+		const style::MarkdownFailure &original) const;
+	void make(
+		style::Markdown &my,
+		const style::Markdown &original) const;
+	void make(
 		style::TwoIconButton &my,
 		const style::TwoIconButton &original) const;
 	void make(
@@ -608,6 +667,7 @@ private:
 	style::icon _historyPinInvertedIcon = { Qt::Uninitialized };
 	style::icon _historySendingIcon = { Qt::Uninitialized };
 	style::icon _historySendingInvertedIcon = { Qt::Uninitialized };
+	style::icon _historySilentInvertedIcon = { Qt::Uninitialized };
 	style::icon _historySentInvertedIcon = { Qt::Uninitialized };
 	style::icon _historyReceivedInvertedIcon = { Qt::Uninitialized };
 	style::icon _msgBotKbUrlIcon = { Qt::Uninitialized };
@@ -627,6 +687,7 @@ private:
 	style::icon _youtubeIcon = { Qt::Uninitialized };
 	style::icon _videoIcon = { Qt::Uninitialized };
 	style::icon _historyPollChoiceRight = { Qt::Uninitialized };
+	int _paletteVersion = 0;
 	style::icon _historyPollChoiceWrong = { Qt::Uninitialized };
 
 	ColorIndicesCompressed _colorIndices;

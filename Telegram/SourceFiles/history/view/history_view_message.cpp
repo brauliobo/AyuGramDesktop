@@ -4016,6 +4016,57 @@ TextSelection Message::adjustSelection(
 	return result;
 }
 
+TextForMimeData Message::selectedText(
+		const MessageSelection &selection) const {
+	return selectedText(selection.flat);
+}
+
+SelectedQuote Message::selectedQuote(
+		const MessageSelection &selection) const {
+	return selectedQuote(selection.flat);
+}
+
+MessageSelection Message::selectionFromStates(
+		const TextState &anchor,
+		const TextState &current,
+		TextSelectType type) const {
+	return Element::selectionFromStates(anchor, current, type);
+}
+
+MessageSelection Message::adjustSelection(
+		const MessageSelection &selection,
+		TextSelectType type) const {
+	auto result = selection;
+	result.flat = adjustSelection(selection.flat, type);
+	return result;
+}
+
+TextSelection Message::selectionForEdit(
+		const MessageSelection &selection) const {
+	return selection.flat;
+}
+
+bool Message::selectionContains(
+		const MessageSelection &selection,
+		const TextState &state) const {
+	return false;
+}
+
+bool Message::consumeHorizontalScroll(QPoint position, int delta) {
+	if (const auto media = this->media()) {
+		return media->consumeHorizontalScroll(position, delta);
+	}
+	return false;
+}
+
+bool Message::canConsumeHorizontalScroll(QPoint position, int delta) const {
+	return false;
+}
+
+void Message::setInstantViewMediaRuntime(QString pageUrl) {
+	Get<InstantViewMediaRuntime>()->pageUrl = std::move(pageUrl);
+}
+
 Reactions::ButtonParameters Message::reactionButtonParameters(
 		QPoint position,
 		const TextState &reactionState) const {

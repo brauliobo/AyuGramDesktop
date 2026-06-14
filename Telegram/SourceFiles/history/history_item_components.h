@@ -14,6 +14,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "ui/empty_userpic.h"
 #include "ui/effects/animations.h"
 #include "ui/effects/ripple_animation.h"
+#include "ui/effects/voice_once_particles.h"
 #include "ui/chat/message_bubble.h"
 
 #include <memory>
@@ -26,10 +27,9 @@ class VoiceSeekClickHandler;
 class ReplyKeyboard;
 
 namespace Ui {
-struct ChatPaintContext;
-class ChatStyle;
-struct PeerUserpicView;
-struct VoiceOnceParticles;
+	struct ChatPaintContext;
+	class ChatStyle;
+	struct PeerUserpicView;
 } // namespace Ui
 
 namespace Ui::Text {

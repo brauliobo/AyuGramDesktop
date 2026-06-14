@@ -245,6 +245,13 @@ public:
 				showInMediaView);
 		}
 	}
+	bool elementScrollToLocalY(
+			not_null<const Element*> view,
+			int localTop) override {
+		return _widget
+			? _widget->elementScrollToLocalY(view, localTop)
+			: false;
+	}
 	void elementCancelUpload(const FullMsgId &context) override {
 		if (_widget) {
 			_widget->elementCancelUpload(context);
@@ -711,8 +718,9 @@ void HistoryInner::setupSwipeReplyAndBack() {
 	};
 
 	auto init = [=, show = _controller->uiShow()](
-			int cursorTop,
-			Qt::LayoutDirection direction) {
+			Ui::Controls::SwipeHandlerInitData data) {
+		const auto cursorTop = data.cursorPosition.y();
+		const auto direction = data.direction;
 		if (direction == Qt::RightToLeft) {
 			auto good = true;
 			enumerateItems<EnumItemsDirection::BottomToTop>([&](
@@ -779,13 +787,14 @@ void HistoryInner::setupSwipeReplyAndBack() {
 		return result;
 	};
 
-	Ui::Controls::SetupSwipeHandler({
+	auto args = Ui::Controls::SwipeHandlerArgs{
 		.widget = this,
 		.scroll = _scroll,
 		.update = std::move(update),
 		.init = std::move(init),
-		.dontStart = _touchMaybeSelecting.value(),
-	});
+	};
+	args.dontStart = _touchMaybeSelecting.value();
+	Ui::Controls::SetupSwipeHandler(std::move(args));
 }
 
 bool HistoryInner::hasSelectRestriction() const {
@@ -3139,7 +3148,12 @@ void HistoryInner::showContextMenu(QContextMenuEvent *e, bool showFromTouch) {
 				}, &st::menuIconDelete);
 			}
 			if (selectedState.count > 0 && !hasCopyRestrictionForSelected()) {
-				Menu::AddDownloadFilesAction(_menu, controller, _selected, this);
+				auto selectedItems = std::vector<not_null<HistoryItem*>>();
+				selectedItems.reserve(_selected.size());
+				for (const auto &[item, selection] : _selected) {
+					selectedItems.push_back(item);
+				}
+				Menu::AddDownloadFilesAction(_menu, controller, selectedItems, this);
 			}
 			_menu->addAction(tr::lng_context_clear_selection(tr::now), [=] {
 				_widget->clearSelected();
@@ -3413,7 +3427,12 @@ void HistoryInner::showContextMenu(QContextMenuEvent *e, bool showFromTouch) {
 				}, &st::menuIconDelete);
 			}
 			if (selectedState.count > 0 && !hasCopyRestrictionForSelected()) {
-				Menu::AddDownloadFilesAction(_menu, controller, _selected, this);
+				auto selectedItems = std::vector<not_null<HistoryItem*>>();
+				selectedItems.reserve(_selected.size());
+				for (const auto &[item, selection] : _selected) {
+					selectedItems.push_back(item);
+				}
+				Menu::AddDownloadFilesAction(_menu, controller, selectedItems, this);
 			}
 			_menu->addAction(tr::lng_context_clear_selection(tr::now), [=] {
 				_widget->clearSelected();
@@ -4439,6 +4458,20 @@ void HistoryInner::elementOpenDocument(
 		{ .id = context, .showDrawButton = showDrawButton });
 }
 
+bool HistoryInner::elementScrollToLocalY(
+		not_null<const Element*> view,
+		int localTop) {
+	const auto currentScrollTop = _visibleAreaTop;
+	const auto currentScrollHeight = _visibleAreaBottom - _visibleAreaTop;
+	const auto wanted = std::max(
+		std::min(itemTop(view) + localTop, height() - currentScrollHeight),
+		0);
+	if (wanted != currentScrollTop) {
+		_scroll->scrollToY(wanted);
+	}
+	return true;
+}
+
 void HistoryInner::elementCancelUpload(const FullMsgId &context) {
 	if (const auto item = session().data().message(context)) {
 		_controller->cancelUploadLayer(item);
@@ -5347,7 +5380,11 @@ void HistoryInner::deleteItem(not_null<HistoryItem*> item) {
 	const auto list = HistoryItemsList{ item };
 	if (CanCreateModerateMessagesBox(list)) {
 		const auto opt = DefaultModerateMessagesBoxOptions();
-		_controller->show(Box(CreateModerateMessagesBox, list, nullptr, opt));
+		_controller->show(Box(
+			CreateModerateMessagesBox,
+			ModerateMessagesBoxEntry{ .items = list },
+			nullptr,
+			opt));
 	} else {
 		const auto suggestModerate = false;
 		_controller->show(Box<DeleteMessagesBox>(item, suggestModerate));
@@ -5367,7 +5404,7 @@ void HistoryInner::deleteAsGroup(FullMsgId itemId) {
 		} else if (CanCreateModerateMessagesBox(group->items)) {
 			_controller->show(Box(
 				CreateModerateMessagesBox,
-				group->items,
+				ModerateMessagesBoxEntry{ .items = group->items },
 				nullptr,
 				ModerateMessagesBoxOptions{}));
 		} else {

@@ -536,6 +536,12 @@ void DefaultElementDelegate::elementOpenDocument(
 	bool showInMediaView) {
 }
 
+bool DefaultElementDelegate::elementScrollToLocalY(
+		not_null<const Element*> view,
+		int localTop) {
+	return false;
+}
+
 void DefaultElementDelegate::elementCancelUpload(const FullMsgId &context) {
 }
 
@@ -2745,10 +2751,10 @@ void Element::attachToBlock(not_null<HistoryBlock*> block, int index) {
 	previousInBlocksChanged();
 }
 
-void Element::removeFromBlock() {
+void Element::removeFromBlock(Data::ViewRemovalReason reason) {
 	Expects(_block != nullptr);
 
-	_block->remove(this);
+	_block->remove(this, reason);
 }
 
 void Element::refreshInBlock() {
@@ -3421,6 +3427,40 @@ TextSelection FindSearchQueryHighlight(
 		return tillEndOfWord(offset);
 	}
 	return {};
+}
+
+MessageSelection Element::selectionFromStates(
+		const TextState &anchor,
+		const TextState &current,
+		TextSelectType type) const {
+	return {};
+}
+
+TextForMimeData Element::selectedText(
+		const MessageSelection &selection) const {
+	return {};
+}
+
+SelectedQuote Element::selectedQuote(
+		const MessageSelection &selection) const {
+	return {};
+}
+
+MessageSelection Element::adjustSelection(
+		const MessageSelection &selection,
+		TextSelectType type) const {
+	return selection;
+}
+
+TextSelection Element::selectionForEdit(
+		const MessageSelection &selection) const {
+	return selection.flat;
+}
+
+bool Element::selectionContains(
+		const MessageSelection &selection,
+		const TextState &state) const {
+	return false;
 }
 
 } // namespace HistoryView

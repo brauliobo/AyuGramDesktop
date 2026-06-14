@@ -1884,3 +1884,11 @@ rpl::producer<> TTLVoiceStops(FullMsgId fullId) {
 }
 
 } // namespace HistoryView
+
+int HistoryView::Document::widenGroupingMaxWidth(int current, bool last) {
+	return current;
+}
+
+int HistoryView::Document::contributedMaxMonospaceWidth() const {
+	return 0;
+}
